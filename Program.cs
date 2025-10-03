@@ -10,6 +10,7 @@ namespace CleanWavFiles
         private static string rppPath;
         private static bool safeMode = false;
         private static bool listMode = false;
+        private static bool silentMode = false;
         private static string rppDir;
         private static string rppContent;
 
@@ -25,19 +26,27 @@ namespace CleanWavFiles
 
             rppPath = args[0];
 
+            if (Directory.Exists(rppPath))
+            {
+                Console.WriteLine("Listing .rpp files in directory tree:");
+                var rppFiles = RppTreeLister.GetAllRppFiles(rppPath);
+                foreach (var file in rppFiles)
+                {
+                    Console.WriteLine(file);
+                }
+                Environment.Exit(0);
+            }
+
             if (!File.Exists(rppPath))
             {
                 Console.WriteLine($"RPP file not found: {rppPath}");
                 return;
             }
 
-            for (int i = 1; i < args.Length; i++)
-            {
-                if (args[i].Equals("--safe", StringComparison.OrdinalIgnoreCase))
-                    safeMode = true;
-                if (args[i].Equals("--list", StringComparison.OrdinalIgnoreCase))
-                    listMode = true;
-            }
+            // Option flags can appear in any order after the path
+            safeMode = args.Skip(1).Contains("--safe", StringComparer.OrdinalIgnoreCase);
+            listMode = args.Skip(1).Contains("--list", StringComparer.OrdinalIgnoreCase);
+            silentMode = args.Skip(1).Contains("--silent", StringComparer.OrdinalIgnoreCase);
 
             rppDir = Path.GetDirectoryName(rppPath);
             if (string.IsNullOrEmpty(rppDir))
@@ -82,13 +91,15 @@ namespace CleanWavFiles
                 foreach (var file in filesToDelete)
                     Console.WriteLine($"  - {Path.GetFileName(file)}");
             }
-
-            Console.Write("Do you want to proceed? (y/N): ");
-            var response = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(response) || !(response.Trim().ToLower() == "y" || response.Trim().ToLower() == "yes"))
+            if (!silentMode)
             {
-                Console.WriteLine("Aborted. No files were deleted or moved.");
-                return;
+                Console.Write("Do you want to proceed? (y/N): ");
+                var response = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(response) || !(response.Trim().ToLower() == "y" || response.Trim().ToLower() == "yes"))
+                {
+                    Console.WriteLine("Aborted. No files were deleted or moved.");
+                    return;
+                }
             }
 
             int affectedCount = 0;
