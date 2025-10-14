@@ -6,29 +6,29 @@ namespace CleanWavFiles
         {
             if (!Directory.Exists(rootPath))
             {
-                Console.WriteLine($"Directory not found: {rootPath}");
+                ConsoleHelper.WriteError($"Directory not found: {rootPath}");
                 return;
             }
 
-            Console.WriteLine($"Searching for 'Unused Wavs' folders in: {rootPath}");
-            Console.WriteLine();
+            ConsoleHelper.WriteInfo($"Searching for 'Unused Wavs' folders in: {rootPath}");
+            ConsoleHelper.WriteInfo();
 
             // Find all "Unused Wavs" directories recursively
             var unusedWavsDirs = Directory.GetDirectories(rootPath, "Unused Wavs", SearchOption.AllDirectories).ToList();
 
             if (unusedWavsDirs.Count == 0)
             {
-                Console.WriteLine("No 'Unused Wavs' folders found.");
+                ConsoleHelper.WriteWarning("No 'Unused Wavs' folders found.");
                 return;
             }
 
-            Console.WriteLine($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
+            ConsoleHelper.WriteInfo($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
             foreach (var dir in unusedWavsDirs)
             {
                 string parentDir = Path.GetDirectoryName(dir);
-                Console.WriteLine($"  - {parentDir}");
+                ConsoleHelper.WriteInfo($"  - {parentDir}");
             }
-            Console.WriteLine();
+            ConsoleHelper.WriteInfo();
 
             // Delete all found directories
             int deletedCount = 0;
@@ -46,13 +46,13 @@ namespace CleanWavFiles
                 catch (Exception ex)
                 {
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Failed to delete {parentDir}: {ex.Message}");
+                    ConsoleHelper.WriteError($"Failed to delete {parentDir}: {ex.Message}");
                     failedCount++;
                 }
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"Cleanup complete: {deletedCount} folder(s) deleted, {failedCount} failed.");
+            ConsoleHelper.WriteInfo();
+            ConsoleHelper.WriteSuccess($"Cleanup complete: {deletedCount} folder(s) deleted, {failedCount} failed.");
         }
     }
 }
