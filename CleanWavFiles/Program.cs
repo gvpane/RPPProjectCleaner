@@ -22,27 +22,37 @@ namespace CleanWavFiles
             }
 
             string rppContent = File.ReadAllText(filePath);
-            var referencedWavs = Regex.Matches(rppContent, "FILE \"([^\"]*\\.wav)\"", RegexOptions.IgnoreCase)
+            
+            // Extract relative paths from .rpp and convert to absolute paths
+            var referencedWavPaths = Regex.Matches(rppContent, "FILE \"([^\"]*\\.wav)\"", RegexOptions.IgnoreCase)
                 .Cast<Match>()
-                .Select(m => Path.GetFileName(m.Groups[1].Value).ToLowerInvariant())
-                .ToHashSet();
+                .Select(m => m.Groups[1].Value.Replace('/', '\\'))  // Normalize path separators
+                .Select(relativePath => Path.GetFullPath(Path.Combine(rppDir, relativePath)))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             bool listMode = Program.listMode;
             bool safeMode = Program.safeMode;
             bool silentMode = Program.silentMode;
 
-            Console.WriteLine($"Found {referencedWavs.Count} referenced WAV files in the project: {filePath}");
+            Console.WriteLine($"Found {referencedWavPaths.Count} referenced WAV files in the project: {filePath}");
             if (listMode)
             {
-                foreach (var refWav in referencedWavs.OrderBy(x => x))
+                foreach (var refWav in referencedWavPaths.OrderBy(x => x))
                     Console.WriteLine($"  - {refWav}");
             }
 
-            var wavFiles = Directory.GetFiles(rppDir, "*.wav", SearchOption.TopDirectoryOnly);
-            Console.WriteLine($"Found {wavFiles.Length} WAV files in directory");
+            // Collect WAV files from both root directory and Media subfolder
+            var wavFiles = Directory.GetFiles(rppDir, "*.wav", SearchOption.TopDirectoryOnly).ToList();
+            string mediaDir = Path.Combine(rppDir, "Media");
+            if (Directory.Exists(mediaDir))
+            {
+                wavFiles.AddRange(Directory.GetFiles(mediaDir, "*.wav", SearchOption.TopDirectoryOnly));
+            }
+            Console.WriteLine($"Found {wavFiles.Count} WAV files in directory (including Media folder)");
 
+            // Compare full absolute paths
             var filesToDelete = wavFiles
-                .Where(wavFile => !referencedWavs.Contains(Path.GetFileName(wavFile).ToLowerInvariant()))
+                .Where(wavFile => !referencedWavPaths.Contains(Path.GetFullPath(wavFile)))
                 .ToList();
 
             if (filesToDelete.Count == 0)
@@ -58,7 +68,10 @@ namespace CleanWavFiles
                     : "The following files are NOT referenced in the project and will be DELETED:";
                 Console.WriteLine(actionMsg);
                 foreach (var file in filesToDelete)
-                    Console.WriteLine($"  - {Path.GetFileName(file)}");
+                {
+                    string relativePath = Path.GetRelativePath(rppDir, file);
+                    Console.WriteLine($"  - {relativePath}");
+                }
             }
             if (!silentMode)
             {
@@ -74,24 +87,32 @@ namespace CleanWavFiles
             int affectedCount = 0;
             if (safeMode)
             {
-                string unusedDir = Path.Combine(rppDir, "Unused Wavs");
-                if (!Directory.Exists(unusedDir)) Directory.CreateDirectory(unusedDir);
-
                 foreach (var wavFile in filesToDelete)
                 {
                     try
                     {
+                        // Determine the correct Unused Wavs folder based on original location
+                        string wavFileDir = Path.GetDirectoryName(wavFile);
+                        string unusedDir = Path.Combine(wavFileDir, "Unused Wavs");
+                        
+                        if (!Directory.Exists(unusedDir)) 
+                            Directory.CreateDirectory(unusedDir);
+
                         string destPath = Path.Combine(unusedDir, Path.GetFileName(wavFile));
                         File.Move(wavFile, destPath, overwrite: true);
-                        Console.WriteLine($"Moved: {Path.GetFileName(wavFile)}");
+                        
+                        // Show relative path for better readability
+                        string relativePath = Path.GetRelativePath(rppDir, wavFile);
+                        Console.WriteLine($"Moved: {relativePath}");
                         affectedCount++;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to move {Path.GetFileName(wavFile)}: {ex.Message}");
+                        string relativePath = Path.GetRelativePath(rppDir, wavFile);
+                        Console.WriteLine($"Failed to move {relativePath}: {ex.Message}");
                     }
                 }
-                Console.WriteLine($"Moved {affectedCount} unused files to '{unusedDir}'.");
+                Console.WriteLine($"Moved {affectedCount} unused files to 'Unused Wavs' folder(s).");
                 Console.WriteLine("Cleanup complete.");
                 return;
             }
@@ -101,12 +122,14 @@ namespace CleanWavFiles
                 try
                 {
                     File.Delete(wavFile);
-                    Console.WriteLine($"Deleted: {Path.GetFileName(wavFile)}");
+                    string relativePath = Path.GetRelativePath(rppDir, wavFile);
+                    Console.WriteLine($"Deleted: {relativePath}");
                     affectedCount++;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to delete {Path.GetFileName(wavFile)}: {ex.Message}");
+                    string relativePath = Path.GetRelativePath(rppDir, wavFile);
+                    Console.WriteLine($"Failed to delete {relativePath}: {ex.Message}");
                 }
             }
             Console.WriteLine($"Deleted {affectedCount} unused files.");
