@@ -1,6 +1,10 @@
 # Build results
 bin/
 obj/
+publish/
+*/bin/
+*/obj/
+*/publish/
 
 # User-specific files
 *.user
@@ -23,7 +27,7 @@ Thumbs.db
 *.bak
 
 # Unused Wavs folder (if you want to ignore it)
-Unused Wavs/
-publish/CleanWavFiles.pdb
+
 DummyWavMaker/test_output
+
     
