@@ -23,6 +23,7 @@ namespace CleanWavFiles
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             Console.WriteLine($"Found {referencedWavPaths.Count} referenced WAV files in the project: {filePath}");
+            
             if (listMode)
             {
                 foreach (var refWav in referencedWavPaths.OrderBy(x => x))
