@@ -23,7 +23,7 @@ namespace CleanWavFiles
             Console.ResetColor();
         }
 
-        public static void WriteInfo(string message)
+        public static void WriteInfo(string message = "")
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(message);

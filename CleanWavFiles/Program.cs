@@ -6,24 +6,24 @@ namespace CleanWavFiles
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: CleanWavFiles <path-to-rpp-file-or-directory> [options]");
-                Console.WriteLine();
-                Console.WriteLine("Options:");
-                Console.WriteLine("  --unsafe           DELETE unused WAVs permanently (default: move to 'Unused Wavs' folder)");
-                Console.WriteLine("  --list             Show list of files before taking action");
-                Console.WriteLine("  --dry-run          Preview what would happen without making changes");
-                Console.WriteLine("  --silent           Skip confirmation prompt");
-                Console.WriteLine("  --multi            Process all .rpp files in directory tree");
-                Console.WriteLine("  --exclude-folders  Comma-separated folder names to exclude (e.g., \"Renders,Backup,Archive\")");
-                Console.WriteLine();
-                Console.WriteLine("Cleanup mode:");
-                Console.WriteLine("  --cleanup          Delete all 'Unused Wavs' folders recursively (use with directory path only)");
-                Console.WriteLine();
-                Console.WriteLine("Examples:");
-                Console.WriteLine("  CleanWavFiles.exe \"project.rpp\"");
-                Console.WriteLine("  CleanWavFiles.exe \"project.rpp\" --dry-run");
-                Console.WriteLine("  CleanWavFiles.exe \"project.rpp\" --exclude-folders \"Renders,Backup\"");
-                Console.WriteLine("  CleanWavFiles.exe \"D:\\Projects\" --multi --exclude-folders \"Archive\"");
+                ConsoleHelper.WriteInfo("Usage: CleanWavFiles <path-to-rpp-file-or-directory> [options]");
+                ConsoleHelper.WriteInfo();
+                ConsoleHelper.WriteInfo("Options:");
+                ConsoleHelper.WriteInfo("  --unsafe           DELETE unused WAVs permanently (default: move to 'Unused Wavs' folder)");
+                ConsoleHelper.WriteInfo("  --list             Show list of files before taking action");
+                ConsoleHelper.WriteInfo("  --dry-run          Preview what would happen without making changes");
+                ConsoleHelper.WriteInfo("  --silent           Skip confirmation prompt");
+                ConsoleHelper.WriteInfo("  --multi            Process all .rpp files in directory tree");
+                ConsoleHelper.WriteInfo("  --exclude-folders  Comma-separated folder names to exclude (e.g., \"Renders,Backup,Archive\")");
+                ConsoleHelper.WriteInfo();
+                ConsoleHelper.WriteInfo("Cleanup mode:");
+                ConsoleHelper.WriteInfo("  --cleanup          Delete all 'Unused Wavs' folders recursively (use with directory path only)");
+                ConsoleHelper.WriteInfo();
+                ConsoleHelper.WriteInfo("Examples:");
+                ConsoleHelper.WriteInfo("  CleanWavFiles.exe \"project.rpp\"");
+                ConsoleHelper.WriteInfo("  CleanWavFiles.exe \"project.rpp\" --dry-run");
+                ConsoleHelper.WriteInfo("  CleanWavFiles.exe \"project.rpp\" --exclude-folders \"Renders,Backup\"");
+                ConsoleHelper.WriteInfo("  CleanWavFiles.exe \"D:\\Projects\" --multi --exclude-folders \"Archive\"");
                 return;
             }
 
@@ -69,7 +69,7 @@ namespace CleanWavFiles
             {
                 if (!Directory.Exists(rppPath))
                 {
-                    Console.WriteLine("Error: --cleanup requires a directory path.");
+                    ConsoleHelper.WriteError("Error: --cleanup requires a directory path.");
                     return;
                 }
 
@@ -82,20 +82,20 @@ namespace CleanWavFiles
             {
                 if (!multiMode)
                 {
-                    Console.WriteLine("Directory given, but --multi option not present. Exiting.");
+                    ConsoleHelper.WriteError("Directory given, but --multi option not present. Exiting.");
                     return;
                 }
 
                 var rppFiles = RppTreeLister.GetAllRppFiles(rppPath);
                 if (rppFiles.Count == 0)
                 {
-                    Console.WriteLine("No .rpp files found in directory.");
+                    ConsoleHelper.WriteError("No .rpp files found in directory.");
                     return;
                 }
 
                 foreach (var file in rppFiles)
                 {
-                    Console.WriteLine($"\nProcessing: {file}");
+                    ConsoleHelper.WriteInfo($"Processing: {file}");
                     RppCleaner.Clean(file, unsafeMode, listMode, silentMode, dryRunMode, excludedFolders);
                 }
                 return;
@@ -104,7 +104,7 @@ namespace CleanWavFiles
             // Handle single file
             if (!File.Exists(rppPath))
             {
-                Console.WriteLine($"RPP file not found: {rppPath}");
+                ConsoleHelper.WriteError($"RPP file not found: {rppPath}");
                 return;
             }
 
