@@ -4,14 +4,14 @@ namespace CleanWavFiles
 {
     static class RppCleaner
     {
-        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode, HashSet<string> excludedFolders = null)
+        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode, bool dryRunMode, HashSet<string> excludedFolders = null)
         {
             excludedFolders ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string rppDir = Path.GetDirectoryName(filePath);
             if (string.IsNullOrEmpty(rppDir))
             {
-                Console.WriteLine($"Could not determine directory for: {filePath}");
+                ConsoleHelper.WriteError($"Could not determine directory for: {filePath}");
                 return;
             }
 
@@ -24,12 +24,16 @@ namespace CleanWavFiles
                 .Select(relativePath => Path.GetFullPath(Path.Combine(rppDir, relativePath)))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            Console.WriteLine($"Found {referencedWavPaths.Count} referenced WAV files in the project: {filePath}");
+            ConsoleHelper.WriteInfo($"Found {referencedWavPaths.Count} referenced WAV files in the project");
             
-            if (listMode)
+            if (listMode && !dryRunMode)
             {
                 foreach (var refWav in referencedWavPaths.OrderBy(x => x))
-                    Console.WriteLine($"  - {refWav}");
+                {
+                    long fileSize = File.Exists(refWav) ? new FileInfo(refWav).Length : 0;
+                    ConsoleHelper.WriteSuccess($"  ✓ {Path.GetRelativePath(rppDir, refWav)} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                }
+                Console.WriteLine();
             }
 
             // Collect WAV files recursively, excluding specified folders
@@ -39,35 +43,73 @@ namespace CleanWavFiles
 
             if (excludedFolders.Count > 0)
             {
-                Console.WriteLine($"Found {wavFiles.Count} WAV files in directory tree (excluding: {string.Join(", ", excludedFolders)})");
+                ConsoleHelper.WriteInfo($"Found {wavFiles.Count} WAV files in directory tree (excluding: {string.Join(", ", excludedFolders)})");
             }
             else
             {
-                Console.WriteLine($"Found {wavFiles.Count} WAV files in directory tree");
+                ConsoleHelper.WriteInfo($"Found {wavFiles.Count} WAV files in directory tree");
             }
 
-            // Compare full absolute paths
+            // Compare full absolute paths and calculate sizes
             var filesToDelete = wavFiles
                 .Where(wavFile => !referencedWavPaths.Contains(Path.GetFullPath(wavFile)))
                 .ToList();
 
             if (filesToDelete.Count == 0)
             {
-                Console.WriteLine("No unused .wav files to delete. Exiting.");
+                ConsoleHelper.WriteSuccess("✓ No unused .wav files found. All files are referenced!");
                 return;
+            }
+
+            // Calculate total size
+            long totalSize = filesToDelete.Sum(f => new FileInfo(f).Length);
+
+            Console.WriteLine();
+            if (dryRunMode)
+            {
+                ConsoleHelper.WriteInfo("═══ DRY RUN MODE - No changes will be made ═══");
             }
 
             if (listMode)
             {
-                string actionMsg = unsafeMode
-                    ? "The following files are NOT referenced in the project and will be DELETED:"
-                    : "The following files are NOT referenced in the project and will be MOVED to 'Unused Wavs':";
-                Console.WriteLine(actionMsg);
+                string actionMsg = dryRunMode
+                    ? $"\nFound {filesToDelete.Count} unused file(s) that WOULD be processed:"
+                    : unsafeMode
+                        ? $"\nThe following {filesToDelete.Count} file(s) will be DELETED:"
+                        : $"\nThe following {filesToDelete.Count} file(s) will be MOVED to 'Unused Wavs':";
+                
+                if (unsafeMode && !dryRunMode)
+                    ConsoleHelper.WriteError(actionMsg);
+                else if (dryRunMode)
+                    ConsoleHelper.WriteInfo(actionMsg);
+                else
+                    ConsoleHelper.WriteWarning(actionMsg);
+
+                Console.WriteLine();
                 foreach (var file in filesToDelete)
                 {
                     string relativePath = Path.GetRelativePath(rppDir, file);
-                    Console.WriteLine($"  - {relativePath}");
+                    long fileSize = new FileInfo(file).Length;
+                    
+                    if (unsafeMode && !dryRunMode)
+                        ConsoleHelper.WriteError($"  ✗ {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                    else
+                        ConsoleHelper.WriteWarning($"  → {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                 }
+                Console.WriteLine();
+                ConsoleHelper.WriteInfo($"Total space: {ConsoleHelper.FormatFileSize(totalSize)}");
+                Console.WriteLine();
+            }
+            else
+            {
+                ConsoleHelper.WriteWarning($"Found {filesToDelete.Count} unused WAV file(s) ({ConsoleHelper.FormatFileSize(totalSize)})");
+            }
+
+            // Exit early if dry-run mode
+            if (dryRunMode)
+            {
+                ConsoleHelper.WriteInfo("═══ Dry run complete - No files were modified ═══");
+                return;
             }
 
             if (!silentMode)
@@ -76,31 +118,41 @@ namespace CleanWavFiles
                 var response = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(response) || !(response.Trim().ToLower() == "y" || response.Trim().ToLower() == "yes"))
                 {
-                    Console.WriteLine("Aborted. No files were deleted or moved.");
+                    ConsoleHelper.WriteWarning("Aborted. No files were deleted or moved.");
                     return;
                 }
             }
 
+            Console.WriteLine();
+            ConsoleHelper.WriteSeparator('═', 60);
             int affectedCount = 0;
+            long processedSize = 0;
+            
             if (unsafeMode)
             {
                 foreach (var wavFile in filesToDelete)
                 {
                     try
                     {
+                        long fileSize = new FileInfo(wavFile).Length;
                         File.Delete(wavFile);
                         string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                        Console.WriteLine($"Deleted: {relativePath}");
+                        ConsoleHelper.WriteError($"✗ Deleted: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                         affectedCount++;
+                        processedSize += fileSize;
                     }
                     catch (Exception ex)
                     {
                         string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                        Console.WriteLine($"Failed to delete {relativePath}: {ex.Message}");
+                        ConsoleHelper.WriteError($"✗ Failed to delete {relativePath}: {ex.Message}");
                     }
                 }
-                Console.WriteLine($"Deleted {affectedCount} unused files.");
-                Console.WriteLine("Cleanup complete.");
+                
+                Console.WriteLine();
+                ConsoleHelper.WriteSeparator('═', 60);
+                ConsoleHelper.WriteSuccess($"✓ Deleted {affectedCount} of {filesToDelete.Count} file(s)");
+                ConsoleHelper.WriteSuccess($"✓ Space freed: {ConsoleHelper.FormatFileSize(processedSize)}");
+                ConsoleHelper.WriteSeparator('═', 60);
                 return;
             }
 
@@ -108,6 +160,8 @@ namespace CleanWavFiles
             {
                 try
                 {
+                    long fileSize = new FileInfo(wavFile).Length;
+                    
                     // Determine the correct Unused Wavs folder based on original location
                     string wavFileDir = Path.GetDirectoryName(wavFile);
                     string unusedDir = Path.Combine(wavFileDir, "Unused Wavs");
@@ -120,17 +174,22 @@ namespace CleanWavFiles
                     
                     // Show relative path for better readability
                     string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                    Console.WriteLine($"Moved: {relativePath}");
+                    ConsoleHelper.WriteWarning($"→ Moved: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                     affectedCount++;
+                    processedSize += fileSize;
                 }
                 catch (Exception ex)
                 {
                     string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                    Console.WriteLine($"Failed to move {relativePath}: {ex.Message}");
+                    ConsoleHelper.WriteError($"✗ Failed to move {relativePath}: {ex.Message}");
                 }
             }
-            Console.WriteLine($"Moved {affectedCount} unused files to 'Unused Wavs' folder(s).");
-            Console.WriteLine("Cleanup complete.");
+            
+            Console.WriteLine();
+            ConsoleHelper.WriteSeparator('═', 60);
+            ConsoleHelper.WriteSuccess($"✓ Moved {affectedCount} of {filesToDelete.Count} file(s) to 'Unused Wavs' folder(s)");
+            ConsoleHelper.WriteSuccess($"✓ Space moved: {ConsoleHelper.FormatFileSize(processedSize)}");
+            ConsoleHelper.WriteSeparator('═', 60);
         }
 
         private static bool IsInExcludedFolder(string filePath, string rppDir, HashSet<string> excludedFolders)

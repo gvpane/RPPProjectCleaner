@@ -13,14 +13,18 @@ This solution contains two C# console tools for managing Reaper DAW project file
 3. **Recursively scans ALL subfolders** in project directory for WAV files
 4. Supports **folder exclusion** via `--exclude-folders` flag (comma-separated list)
 5. Compares full absolute paths to determine unreferenced files
-6. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
-7. **With `--unsafe`**: Deletes unreferenced files permanently
-8. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
-9. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
+6. **Tracks file sizes**: Shows individual and total file sizes using `FileInfo.Length`
+7. **Color-coded output**: Uses `ConsoleHelper` for visual feedback (green/yellow/red/cyan)
+8. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
+9. **With `--unsafe`**: Deletes unreferenced files permanently
+10. **`--dry-run` mode**: Shows what would happen without making changes (no confirmation needed)
+11. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
+12. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
 
 **Key Classes**:
 - `RppCleaner.Clean()`: Contains main cleaning logic for processing .rpp files
 - `RppCleaner.IsInExcludedFolder()`: Checks if a file path contains any excluded folder names
+- `ConsoleHelper`: Utility class for colored output and file size formatting
 - `UnusedWavsCleaner.CleanupUnusedWavsFolders()`: Recursively removes all "Unused Wavs" folders
 
 **Path Handling**: 
@@ -68,6 +72,9 @@ dotnet build DummyWavMaker/DummyWavMaker.csproj
 
 ### Run
 ```powershell
+# Dry run (preview without changes - recommended first use)
+dotnet run --project CleanWavFiles -- "path/to/project.rpp" --dry-run
+
 # Clean single project (default: move to "Unused Wavs")
 dotnet run --project CleanWavFiles -- "path/to/project.rpp" [--list] [--silent]
 
