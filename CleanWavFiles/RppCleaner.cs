@@ -4,8 +4,10 @@ namespace CleanWavFiles
 {
     static class RppCleaner
     {
-        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode)
+        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode, HashSet<string> excludedFolders = null)
         {
+            excludedFolders ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             string rppDir = Path.GetDirectoryName(filePath);
             if (string.IsNullOrEmpty(rppDir))
             {
@@ -30,14 +32,19 @@ namespace CleanWavFiles
                     Console.WriteLine($"  - {refWav}");
             }
 
-            // Collect WAV files from both root directory and Media subfolder
-            var wavFiles = Directory.GetFiles(rppDir, "*.wav", SearchOption.TopDirectoryOnly).ToList();
-            string mediaDir = Path.Combine(rppDir, "Media");
-            if (Directory.Exists(mediaDir))
+            // Collect WAV files recursively, excluding specified folders
+            var wavFiles = Directory.GetFiles(rppDir, "*.wav", SearchOption.AllDirectories)
+                .Where(wavFile => !IsInExcludedFolder(wavFile, rppDir, excludedFolders))
+                .ToList();
+
+            if (excludedFolders.Count > 0)
             {
-                wavFiles.AddRange(Directory.GetFiles(mediaDir, "*.wav", SearchOption.TopDirectoryOnly));
+                Console.WriteLine($"Found {wavFiles.Count} WAV files in directory tree (excluding: {string.Join(", ", excludedFolders)})");
             }
-            Console.WriteLine($"Found {wavFiles.Count} WAV files in directory (including Media folder)");
+            else
+            {
+                Console.WriteLine($"Found {wavFiles.Count} WAV files in directory tree");
+            }
 
             // Compare full absolute paths
             var filesToDelete = wavFiles
@@ -124,6 +131,18 @@ namespace CleanWavFiles
             }
             Console.WriteLine($"Moved {affectedCount} unused files to 'Unused Wavs' folder(s).");
             Console.WriteLine("Cleanup complete.");
+        }
+
+        private static bool IsInExcludedFolder(string filePath, string rppDir, HashSet<string> excludedFolders)
+        {
+            if (excludedFolders.Count == 0)
+                return false;
+
+            // Get relative path and check if any part of the path matches excluded folders
+            string relativePath = Path.GetRelativePath(rppDir, filePath);
+            string[] pathParts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return pathParts.Any(part => excludedFolders.Contains(part));
         }
     }
 }

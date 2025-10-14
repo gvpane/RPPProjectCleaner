@@ -11,11 +11,12 @@ CleanWavFiles scans your Reaper project (`.rpp`) files and identifies WAV files 
 ## Features
 
 - **Safe by default**: Moves unused files to a separate folder instead of deleting them
-- **Smart scanning**: Checks both the project root and `Media` subfolder
+- **Recursive scanning**: Scans all subfolders in your project directory to find WAV files
+- **Flexible exclusion**: Skip specific folders like "Renders" or "Backup" with `--exclude-folders`
 - **Batch processing**: Clean multiple projects at once with `--multi`
 - **Preview mode**: See what will be moved before taking action with `--list`
 - **No interruptions**: Skip confirmation prompts with `--silent`
-- **Preserves structure**: Maintains separate "Unused Wavs" folders for root and Media directories
+- **Preserves structure**: Maintains folder context when moving files to "Unused Wavs" folders
 
 ## Installation
 
@@ -53,6 +54,18 @@ Useful for automated cleanup workflows:
 CleanWavFiles.exe "C:\Music\MySong.rpp" --silent
 ```
 
+### Exclude Specific Folders
+
+If you have folders you want to skip (like renders, backups, or archives):
+```
+CleanWavFiles.exe "C:\Music\MySong.rpp" --exclude-folders="Renders,Backup,Archive"
+```
+
+Works with multi-mode too:
+```
+CleanWavFiles.exe "C:\Music\MyProjects" --multi --exclude-folders="Renders,Stems"
+```
+
 ### Permanent Deletion (Use with Caution!)
 
 If you want to delete unused files immediately instead of moving them:
@@ -78,6 +91,7 @@ This will recursively find and delete all "Unused Wavs" folders and their conten
 | `--silent` | Skip the confirmation prompt (auto-confirm) |
 | `--multi` | Process all `.rpp` files in a directory tree |
 | `--unsafe` | **Permanently delete** unused files instead of moving them ⚠️ |
+| `--exclude-folders="Name1,Name2"` | Skip scanning specific folder names (comma-separated) |
 
 These options can be combined in any order after the file/folder path.
 
@@ -105,6 +119,11 @@ CleanWavFiles.exe "C:\Music\2024" --multi --silent
 CleanWavFiles.exe "C:\Music\MySong.rpp" --unsafe --list
 ```
 
+**Exclude specific folders from scanning:**
+```
+CleanWavFiles.exe "C:\Music\MySong.rpp" --exclude-folders="Renders,Backup,Archive"
+```
+
 **Clean up all "Unused Wavs" folders after review:**
 ```
 CleanWavFiles.exe "C:\Music\2024" --cleanup
@@ -112,11 +131,14 @@ CleanWavFiles.exe "C:\Music\2024" --cleanup
 
 ## Important Notes
 
-- By default, files are moved to an "Unused Wavs" folder in the same location as the original files
-- Files in the project root go to `<project folder>/Unused Wavs/`
-- Files in the Media subfolder go to `<project folder>/Media/Unused Wavs/`
-- The tool only processes WAV files that are not referenced in the `.rpp` file
-- Using `--unsafe` will permanently delete files - they cannot be recovered!
+⚠️ **Always back up your projects before using this tool!**
+
+- **Recursive scanning**: The tool now scans ALL subfolders in your project directory by default
+- **Preserves context**: Files are moved to "Unused Wavs" folders in their original location
+  - Example: `Audio/Drums/kick.wav` → `Audio/Drums/Unused Wavs/kick.wav`
+- **Folder exclusion**: Use `--exclude-folders` to skip specific directories (e.g., renders, backups)
+- **WAV-only**: Only processes WAV files that are not referenced in the `.rpp` file
+- **Permanent deletion**: Using `--unsafe` will permanently delete files - they cannot be recovered!
 
 ## Building from Source
 
