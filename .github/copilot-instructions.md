@@ -10,18 +10,28 @@ This solution contains two C# console tools for managing Reaper DAW project file
 ### CleanWavFiles (`CleanWavFiles/Program.cs`)
 1. Parses `.rpp` file using regex to extract WAV references: `FILE "([^"]*\.wav)"`
 2. Converts relative paths from `.rpp` to absolute paths for accurate matching
-3. Scans both project root directory AND `Media/` subfolder for WAV files
-4. Compares full absolute paths to determine unreferenced files
-5. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
-6. **With `--unsafe`**: Deletes unreferenced files permanently
-7. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
-8. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
+3. **Recursively scans ALL subfolders** in project directory for WAV files
+4. Supports **folder exclusion** via `--exclude-folders` flag (comma-separated list)
+5. Compares full absolute paths to determine unreferenced files
+6. **Tracks file sizes**: Shows individual and total file sizes using `FileInfo.Length`
+7. **Color-coded output**: Uses `ConsoleHelper` for visual feedback (green/yellow/red/cyan)
+8. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
+9. **With `--unsafe`**: Deletes unreferenced files permanently
+10. **`--dry-run` mode**: Shows what would happen without making changes (no confirmation needed)
+11. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
+12. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
 
 **Key Classes**:
 - `RppCleaner.Clean()`: Contains main cleaning logic for processing .rpp files
+- `RppCleaner.IsInExcludedFolder()`: Checks if a file path contains any excluded folder names
+- `ConsoleHelper`: Utility class for colored output and file size formatting
 - `UnusedWavsCleaner.CleanupUnusedWavsFolders()`: Recursively removes all "Unused Wavs" folders
 
-**Path Handling**: WAVs referenced as `"Media\file.wav"` in `.rpp` files are correctly matched against `Media/file.wav` on disk. Safe mode (default) creates separate `Unused Wavs` folders in each location (root and Media).
+**Path Handling**: 
+- WAVs referenced as `"Media\file.wav"` in `.rpp` files are correctly matched against `Media/file.wav` on disk
+- Scans recursively with `SearchOption.AllDirectories` 
+- Safe mode (default) creates `Unused Wavs` folders preserving original structure
+- Example: `Audio/Drums/kick.wav` → `Audio/Drums/Unused Wavs/kick.wav`
 
 ### DummyWavMaker (`DummyWavMaker/`)
 Generates 10-second mono WAV files (44100Hz, 16-bit) with white noise for testing.
@@ -62,6 +72,9 @@ dotnet build DummyWavMaker/DummyWavMaker.csproj
 
 ### Run
 ```powershell
+# Dry run (preview without changes - recommended first use)
+dotnet run --project CleanWavFiles -- "path/to/project.rpp" --dry-run
+
 # Clean single project (default: move to "Unused Wavs")
 dotnet run --project CleanWavFiles -- "path/to/project.rpp" [--list] [--silent]
 
@@ -70,6 +83,9 @@ dotnet run --project CleanWavFiles -- "path/to/project.rpp" --unsafe
 
 # Clean all projects in directory tree
 dotnet run --project CleanWavFiles -- "path/to/folder" --multi
+
+# Clean with folder exclusion
+dotnet run --project CleanWavFiles -- "path/to/project.rpp" --exclude-folders="Renders,Backup"
 
 # Cleanup all "Unused Wavs" folders recursively
 dotnet run --project CleanWavFiles -- "path/to/folder" --cleanup
