@@ -58,8 +58,18 @@ If you want to delete unused files immediately instead of moving them:
 CleanWavFiles.exe "C:\Music\MySong.rpp" --unsafe
 ```
 
+### Cleanup "Unused Wavs" Folders
+
+After reviewing the moved files, delete all "Unused Wavs" folders in a directory tree:
+```
+CleanWavFiles.exe "C:\Music\MyProjects" --cleanup
+```
+
+This will recursively find and delete all "Unused Wavs" folders and their contents. No confirmation is required.
+
 ## Options
 
+### File Cleaning Options
 | Option | Description |
 |--------|-------------|
 | `--list` | Show which files are referenced and which will be moved/deleted |
@@ -67,7 +77,14 @@ CleanWavFiles.exe "C:\Music\MySong.rpp" --unsafe
 | `--multi` | Process all `.rpp` files in a directory tree |
 | `--unsafe` | **Permanently delete** unused files instead of moving them ⚠️ |
 
-Options can be combined in any order after the file/folder path.
+These options can be combined in any order after the file/folder path.
+
+### Cleanup Mode
+| Option | Description |
+|--------|-------------|
+| `--cleanup` | Delete all "Unused Wavs" folders recursively (standalone operation) |
+
+**Note:** `--cleanup` is a standalone operation and cannot be combined with other options. It requires a directory path.
 
 ## Examples
 
@@ -84,6 +101,11 @@ CleanWavFiles.exe "C:\Music\2024" --multi --silent
 **Cleanup with permanent deletion (careful!):**
 ```
 CleanWavFiles.exe "C:\Music\MySong.rpp" --unsafe --list
+```
+
+**Clean up all "Unused Wavs" folders after review:**
+```
+CleanWavFiles.exe "C:\Music\2024" --cleanup
 ```
 
 ## Important Notes

@@ -12,12 +12,16 @@ This solution contains two C# console tools for managing Reaper DAW project file
 2. Converts relative paths from `.rpp` to absolute paths for accurate matching
 3. Scans both project root directory AND `Media/` subfolder for WAV files
 4. Compares full absolute paths to determine unreferenced files
-5. Deletes or moves unreferenced files, preserving original directory structure
-6. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
+5. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
+6. **With `--unsafe`**: Deletes unreferenced files permanently
+7. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
+8. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
 
-**Key Method**: `CleanRppFile(string filePath)` - contains all cleaning logic with local copies of global flags
+**Key Classes**:
+- `RppCleaner.Clean()`: Contains main cleaning logic for processing .rpp files
+- `UnusedWavsCleaner.CleanupUnusedWavsFolders()`: Recursively removes all "Unused Wavs" folders
 
-**Path Handling**: WAVs referenced as `"Media\file.wav"` in `.rpp` files are correctly matched against `Media/file.wav` on disk. Safe mode creates separate `Unused Wavs` folders in each location (root and Media).
+**Path Handling**: WAVs referenced as `"Media\file.wav"` in `.rpp` files are correctly matched against `Media/file.wav` on disk. Safe mode (default) creates separate `Unused Wavs` folders in each location (root and Media).
 
 ### DummyWavMaker (`DummyWavMaker/`)
 Generates 10-second mono WAV files (44100Hz, 16-bit) with white noise for testing.
@@ -30,10 +34,12 @@ Generates 10-second mono WAV files (44100Hz, 16-bit) with white noise for testin
 ### Command-Line Parsing Pattern
 ```csharp
 // Flags extracted using LINQ after position 0 (the path argument)
-safeMode = args.Skip(1).Contains("--safe", StringComparer.OrdinalIgnoreCase);
+unsafeMode = args.Skip(1).Contains("--unsafe", StringComparer.OrdinalIgnoreCase);
 multiMode = args.Skip(1).Contains("--multi", StringComparer.OrdinalIgnoreCase);
 ```
 All boolean flags are order-independent after the required path argument.
+
+**Special case**: `--cleanup` is a standalone operation that short-circuits normal processing - it only deletes "Unused Wavs" folders and ignores all other flags.
 
 ### Error Handling Style
 - **Early returns** for error conditions (no deep nesting)
@@ -41,7 +47,7 @@ All boolean flags are order-independent after the required path argument.
 - Example: Check file/directory existence → print error → return
 
 ### Static Method Organization
-Both projects use static utility classes (`RppTreeLister`, `ArgumentsValidation`, `WavFileGenerator`) rather than instantiating objects.
+Both projects use static utility classes (`RppTreeLister`, `RppCleaner`, `UnusedWavsCleaner`, `ArgumentsValidation`, `WavFileGenerator`) rather than instantiating objects.
 
 ## Developer Workflows
 
@@ -56,11 +62,17 @@ dotnet build DummyWavMaker/DummyWavMaker.csproj
 
 ### Run
 ```powershell
-# Clean single project
-dotnet run --project CleanWavFiles -- "path/to/project.rpp" [--safe] [--list] [--silent]
+# Clean single project (default: move to "Unused Wavs")
+dotnet run --project CleanWavFiles -- "path/to/project.rpp" [--list] [--silent]
+
+# Clean single project (unsafe: permanent deletion)
+dotnet run --project CleanWavFiles -- "path/to/project.rpp" --unsafe
 
 # Clean all projects in directory tree
-dotnet run --project CleanWavFiles -- "path/to/folder" --multi --safe
+dotnet run --project CleanWavFiles -- "path/to/folder" --multi
+
+# Cleanup all "Unused Wavs" folders recursively
+dotnet run --project CleanWavFiles -- "path/to/folder" --cleanup
 
 # Generate test files
 dotnet run --project DummyWavMaker -- "path/to/output" 50
