@@ -64,7 +64,7 @@ namespace CleanWavFiles
             // Calculate total size
             long totalSize = filesToDelete.Sum(f => new FileInfo(f).Length);
 
-            Console.WriteLine();
+            ConsoleHelper.WriteInfo();
             if (dryRunMode)
             {
                 ConsoleHelper.WriteInfo("═══ DRY RUN MODE - No changes will be made ═══");
@@ -73,36 +73,36 @@ namespace CleanWavFiles
             if (listMode)
             {
                 string actionMsg = dryRunMode
-                    ? $"\nFound {filesToDelete.Count} unused file(s) that WOULD be processed:"
+                    ? $"Found {filesToDelete.Count} unused file(s) that WOULD be processed:"
                     : unsafeMode
-                        ? $"\nThe following {filesToDelete.Count} file(s) will be DELETED:"
-                        : $"\nThe following {filesToDelete.Count} file(s) will be MOVED to 'Unused Wavs':";
+                        ? $"The following {filesToDelete.Count} file(s) will be DELETED:"
+                        : $"The following {filesToDelete.Count} file(s) will be MOVED to 'Unused Wavs':";
                 
                 if (unsafeMode && !dryRunMode)
-                    ConsoleHelper.WriteError(actionMsg);
+                    ConsoleHelper.WriteWarning(actionMsg);
                 else if (dryRunMode)
-                    ConsoleHelper.WriteInfo(actionMsg);
+                    ConsoleHelper.WriteWarning(actionMsg);
                 else
                     ConsoleHelper.WriteWarning(actionMsg);
 
-                Console.WriteLine();
+                ConsoleHelper.WriteInfo();
                 foreach (var file in filesToDelete)
                 {
                     string relativePath = Path.GetRelativePath(rppDir, file);
                     long fileSize = new FileInfo(file).Length;
                     
                     if (unsafeMode && !dryRunMode)
-                        ConsoleHelper.WriteError($"  ✗ {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                        ConsoleHelper.WriteInfo ($"  ✗ {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                     else
-                        ConsoleHelper.WriteWarning($"  → {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                        ConsoleHelper.WriteInfo($"  → {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                 }
-                Console.WriteLine();
+                ConsoleHelper.WriteInfo();
                 ConsoleHelper.WriteInfo($"Total space: {ConsoleHelper.FormatFileSize(totalSize)}");
-                Console.WriteLine();
+                ConsoleHelper.WriteInfo();
             }
             else
             {
-                ConsoleHelper.WriteWarning($"Found {filesToDelete.Count} unused WAV file(s) ({ConsoleHelper.FormatFileSize(totalSize)})");
+                ConsoleHelper.WriteInfo($"Found {filesToDelete.Count} unused WAV file(s) ({ConsoleHelper.FormatFileSize(totalSize)})");
             }
 
             // Exit early if dry-run mode
@@ -137,7 +137,7 @@ namespace CleanWavFiles
                         long fileSize = new FileInfo(wavFile).Length;
                         File.Delete(wavFile);
                         string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                        ConsoleHelper.WriteError($"✗ Deleted: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                        ConsoleHelper.WriteInfo($"Deleted {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                         affectedCount++;
                         processedSize += fileSize;
                     }
@@ -148,7 +148,7 @@ namespace CleanWavFiles
                     }
                 }
                 
-                Console.WriteLine();
+                ConsoleHelper.WriteInfo();
                 ConsoleHelper.WriteSeparator('═', 60);
                 ConsoleHelper.WriteSuccess($"✓ Deleted {affectedCount} of {filesToDelete.Count} file(s)");
                 ConsoleHelper.WriteSuccess($"✓ Space freed: {ConsoleHelper.FormatFileSize(processedSize)}");
@@ -174,7 +174,7 @@ namespace CleanWavFiles
                     
                     // Show relative path for better readability
                     string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                    ConsoleHelper.WriteWarning($"→ Moved: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
+                    ConsoleHelper.WriteInfo($"→ Moved: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                     affectedCount++;
                     processedSize += fileSize;
                 }
