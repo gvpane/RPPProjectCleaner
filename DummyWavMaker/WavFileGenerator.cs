@@ -31,19 +31,19 @@ public class WavFileGenerator
         using (var writer = new BinaryWriter(fs))
         {
             // Write WAV header
-            writer.Write("RIFF".ToCharArray());  // Chunk ID
-            writer.Write(fileSize);             // Chunk Size
-            writer.Write("WAVE".ToCharArray());  // Format
-            writer.Write("fmt ".ToCharArray());  // Subchunk1 ID
-            writer.Write(16);                   // Subchunk1 Size (PCM)
-            writer.Write((short)1);             // Audio Format (PCM)
-            writer.Write((short)Channels);      // Number of Channels
-            writer.Write(SampleRate);           // Sample Rate
-            writer.Write(SampleRate * Channels * bytesPerSample);  // Byte Rate
-            writer.Write((short)(Channels * bytesPerSample));      // Block Align
-            writer.Write((short)BitsPerSample); // Bits Per Sample
-            writer.Write("data".ToCharArray()); // Subchunk2 ID
-            writer.Write(dataSize);             // Subchunk2 Size
+            writer.Write("RIFF".ToCharArray());                     // Chunk ID
+            writer.Write(fileSize);                                 // Chunk Size
+            writer.Write("WAVE".ToCharArray());                     // Format
+            writer.Write("fmt ".ToCharArray());                     // Subchunk1 ID
+            writer.Write(16);                                       // Subchunk1 Size (PCM)
+            writer.Write((short)1);                                 // Audio Format (PCM)
+            writer.Write((short)Channels);                          // Number of Channels
+            writer.Write(SampleRate);                               // Sample Rate
+            writer.Write(SampleRate * Channels * bytesPerSample);   // Byte Rate
+            writer.Write((short)(Channels * bytesPerSample));       // Block Align
+            writer.Write((short)BitsPerSample);                     // Bits Per Sample
+            writer.Write("data".ToCharArray());                     // Subchunk2 ID
+            writer.Write(dataSize);                                 // Subchunk2 Size
 
             // Generate and write white noise data
             Random random = new Random();
