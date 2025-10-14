@@ -40,7 +40,7 @@ namespace CleanWavFiles
                 {
                     Directory.Delete(dir, recursive: true);
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Deleted: {parentDir}");
+                    Console.WriteLine($"Cleaned {parentDir}");
                     deletedCount++;
                 }
                 catch (Exception ex)
