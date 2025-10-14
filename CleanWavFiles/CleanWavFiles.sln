@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanWavFiles", "CleanWavFiles.csproj", "{87F6419E-ACAB-0E55-F0BB-322B0BAD2000}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanWavFiles", "CleanWavFiles\CleanWavFiles.csproj", "{87F6419E-ACAB-0E55-F0BB-322B0BAD2000}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DummyWavMaker", "DummyWavMaker\DummyWavMaker.csproj", "{C3927FAF-1826-41D8-BF9F-0AE93689C720}"
 EndProject
