@@ -1,3 +1,5 @@
+⚠️ **This tool is extreamly destructive!**
+
 # RPP Project Cleaner
 
 A tool to clean up unused WAV files from your Reaper project folders, helping you recover disk space and keep your projects organized.
@@ -109,8 +111,6 @@ CleanWavFiles.exe "C:\Music\2024" --cleanup
 ```
 
 ## Important Notes
-
-⚠️ **Always back up your projects before using this tool!**
 
 - By default, files are moved to an "Unused Wavs" folder in the same location as the original files
 - Files in the project root go to `<project folder>/Unused Wavs/`
