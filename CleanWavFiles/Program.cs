@@ -6,8 +6,8 @@ namespace CleanWavFiles
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: CleanWavFiles <path-to-rpp-file> [--safe] [--list] [--silent] [--multi]");
-                Console.WriteLine("  --safe    Move unused WAVs to 'Unused Wavs' folder instead of deleting");
+                Console.WriteLine("Usage: CleanWavFiles <path-to-rpp-file> [--unsafe] [--list] [--silent] [--multi]");
+                Console.WriteLine("  --unsafe  DELETE unused WAVs permanently (default: move to 'Unused Wavs' folder)");
                 Console.WriteLine("  --list    Show list of files before taking action");
                 Console.WriteLine("  --silent  Skip confirmation prompt");
                 Console.WriteLine("  --multi   Process all .rpp files in directory tree");
@@ -17,7 +17,7 @@ namespace CleanWavFiles
             string rppPath = args[0];
 
             // Parse option flags (can appear in any order after the path)
-            bool safeMode = args.Skip(1).Contains("--safe", StringComparer.OrdinalIgnoreCase);
+            bool unsafeMode = args.Skip(1).Contains("--unsafe", StringComparer.OrdinalIgnoreCase);
             bool listMode = args.Skip(1).Contains("--list", StringComparer.OrdinalIgnoreCase);
             bool silentMode = args.Skip(1).Contains("--silent", StringComparer.OrdinalIgnoreCase);
             bool multiMode = args.Skip(1).Contains("--multi", StringComparer.OrdinalIgnoreCase);
@@ -41,7 +41,7 @@ namespace CleanWavFiles
                 foreach (var file in rppFiles)
                 {
                     Console.WriteLine($"\nProcessing: {file}");
-                    RppCleaner.Clean(file, safeMode, listMode, silentMode);
+                    RppCleaner.Clean(file, unsafeMode, listMode, silentMode);
                 }
                 return;
             }
@@ -53,7 +53,7 @@ namespace CleanWavFiles
                 return;
             }
 
-            RppCleaner.Clean(rppPath, safeMode, listMode, silentMode);
+            RppCleaner.Clean(rppPath, unsafeMode, listMode, silentMode);
         }
     }
 }

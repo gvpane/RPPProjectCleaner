@@ -4,7 +4,7 @@ namespace CleanWavFiles
 {
     static class RppCleaner
     {
-        public static void Clean(string filePath, bool safeMode, bool listMode, bool silentMode)
+        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode)
         {
             string rppDir = Path.GetDirectoryName(filePath);
             if (string.IsNullOrEmpty(rppDir))
@@ -52,9 +52,9 @@ namespace CleanWavFiles
 
             if (listMode)
             {
-                string actionMsg = safeMode
-                    ? "The following files are NOT referenced in the project and will be MOVED to 'Unused Wavs':"
-                    : "The following files are NOT referenced in the project and will be DELETED:";
+                string actionMsg = unsafeMode
+                    ? "The following files are NOT referenced in the project and will be DELETED:"
+                    : "The following files are NOT referenced in the project and will be MOVED to 'Unused Wavs':";
                 Console.WriteLine(actionMsg);
                 foreach (var file in filesToDelete)
                 {
@@ -75,34 +75,24 @@ namespace CleanWavFiles
             }
 
             int affectedCount = 0;
-            if (safeMode)
+            if (unsafeMode)
             {
                 foreach (var wavFile in filesToDelete)
                 {
                     try
                     {
-                        // Determine the correct Unused Wavs folder based on original location
-                        string wavFileDir = Path.GetDirectoryName(wavFile);
-                        string unusedDir = Path.Combine(wavFileDir, "Unused Wavs");
-                        
-                        if (!Directory.Exists(unusedDir)) 
-                            Directory.CreateDirectory(unusedDir);
-
-                        string destPath = Path.Combine(unusedDir, Path.GetFileName(wavFile));
-                        File.Move(wavFile, destPath, overwrite: true);
-                        
-                        // Show relative path for better readability
+                        File.Delete(wavFile);
                         string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                        Console.WriteLine($"Moved: {relativePath}");
+                        Console.WriteLine($"Deleted: {relativePath}");
                         affectedCount++;
                     }
                     catch (Exception ex)
                     {
                         string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                        Console.WriteLine($"Failed to move {relativePath}: {ex.Message}");
+                        Console.WriteLine($"Failed to delete {relativePath}: {ex.Message}");
                     }
                 }
-                Console.WriteLine($"Moved {affectedCount} unused files to 'Unused Wavs' folder(s).");
+                Console.WriteLine($"Deleted {affectedCount} unused files.");
                 Console.WriteLine("Cleanup complete.");
                 return;
             }
@@ -111,18 +101,28 @@ namespace CleanWavFiles
             {
                 try
                 {
-                    File.Delete(wavFile);
+                    // Determine the correct Unused Wavs folder based on original location
+                    string wavFileDir = Path.GetDirectoryName(wavFile);
+                    string unusedDir = Path.Combine(wavFileDir, "Unused Wavs");
+                    
+                    if (!Directory.Exists(unusedDir)) 
+                        Directory.CreateDirectory(unusedDir);
+
+                    string destPath = Path.Combine(unusedDir, Path.GetFileName(wavFile));
+                    File.Move(wavFile, destPath, overwrite: true);
+                    
+                    // Show relative path for better readability
                     string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                    Console.WriteLine($"Deleted: {relativePath}");
+                    Console.WriteLine($"Moved: {relativePath}");
                     affectedCount++;
                 }
                 catch (Exception ex)
                 {
                     string relativePath = Path.GetRelativePath(rppDir, wavFile);
-                    Console.WriteLine($"Failed to delete {relativePath}: {ex.Message}");
+                    Console.WriteLine($"Failed to move {relativePath}: {ex.Message}");
                 }
             }
-            Console.WriteLine($"Deleted {affectedCount} unused files.");
+            Console.WriteLine($"Moved {affectedCount} unused files to 'Unused Wavs' folder(s).");
             Console.WriteLine("Cleanup complete.");
         }
     }
