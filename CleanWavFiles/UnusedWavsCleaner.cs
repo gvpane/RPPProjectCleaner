@@ -40,13 +40,13 @@ namespace CleanWavFiles
                 {
                     Directory.Delete(dir, recursive: true);
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Deleted: {parentDir}\\Unused Wavs");
+                    Console.WriteLine($"Deleted: {parentDir}");
                     deletedCount++;
                 }
                 catch (Exception ex)
                 {
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Failed to delete {parentDir}\\Unused Wavs: {ex.Message}");
+                    Console.WriteLine($"Failed to delete {parentDir}: {ex.Message}");
                     failedCount++;
                 }
             }
