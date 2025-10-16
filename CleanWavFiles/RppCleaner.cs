@@ -4,7 +4,7 @@ namespace CleanWavFiles
 {
     static class RppCleaner
     {
-        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode, bool dryRunMode, HashSet<string> excludedFolders = null)
+        public static void Clean(string filePath, bool unsafeMode, bool listMode, bool silentMode, bool dryRunMode, bool includeAllRpp, HashSet<string> excludedFolders = null)
         {
             excludedFolders ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -15,16 +15,58 @@ namespace CleanWavFiles
                 return;
             }
 
-            string rppContent = File.ReadAllText(filePath);
-            
-            // Extract relative paths from .rpp and convert to absolute paths
-            var referencedWavPaths = Regex.Matches(rppContent, "FILE \"([^\"]*\\.wav)\"", RegexOptions.IgnoreCase)
-                .Cast<Match>()
-                .Select(m => m.Groups[1].Value.Replace('/', '\\'))  // Normalize path separators
-                .Select(relativePath => Path.GetFullPath(Path.Combine(rppDir, relativePath)))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // Check for multiple .rpp files in directory
+            var allRppFiles = RppReferenceAggregator.FindAllRppFiles(filePath);
+            bool useMultiRpp = false;
 
-            ConsoleHelper.WriteInfo($"Found {referencedWavPaths.Count} referenced WAV files in the project");
+            if (allRppFiles.Count > 1)
+            {
+                // Prompt user or use flag
+                if (includeAllRpp)
+                {
+                    useMultiRpp = true;
+                }
+                else if (!dryRunMode) // Don't prompt in dry-run, just show what would happen
+                {
+                    useMultiRpp = RppReferenceAggregator.PromptForMultiRppInclusion(allRppFiles, filePath, silentMode);
+                }
+                else
+                {
+                    // In dry-run, default to multi-rpp to show complete picture
+                    useMultiRpp = true;
+                }
+            }
+
+            HashSet<string> referencedWavPaths;
+            List<RppReferenceAggregator.RppFileInfo> rppInfos = null;
+
+            if (useMultiRpp && allRppFiles.Count > 1)
+            {
+                // Aggregate references from all .rpp files
+                rppInfos = RppReferenceAggregator.GetAllRppFileInfo(allRppFiles);
+                referencedWavPaths = RppReferenceAggregator.AggregateReferences(rppInfos);
+                
+                if (dryRunMode || listMode)
+                {
+                    RppReferenceAggregator.DisplayRppSummary(rppInfos, rppDir, showWarnings: !dryRunMode);
+                }
+
+                int totalRefs = rppInfos.Sum(r => r.WavCount);
+                ConsoleHelper.WriteSuccess($"Combined: {referencedWavPaths.Count} unique WAV file(s) referenced across all projects");
+            }
+            else
+            {
+                // Single .rpp file mode
+                string rppContent = File.ReadAllText(filePath);
+                
+                referencedWavPaths = Regex.Matches(rppContent, "FILE \"([^\"]*\\.wav)\"", RegexOptions.IgnoreCase)
+                    .Cast<Match>()
+                    .Select(m => m.Groups[1].Value.Replace('/', '\\'))
+                    .Select(relativePath => Path.GetFullPath(Path.Combine(rppDir, relativePath)))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                ConsoleHelper.WriteInfo($"Found {referencedWavPaths.Count} referenced WAV file(s) in the project");
+            }
             
             if (listMode && !dryRunMode)
             {
@@ -114,11 +156,11 @@ namespace CleanWavFiles
 
             if (!silentMode)
             {
-                Console.Write("Do you want to proceed? (y/N): ");
+                ConsoleHelper.WritePrompt("Do you want to proceed? (y/N): ");
                 var response = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(response) || !(response.Trim().ToLower() == "y" || response.Trim().ToLower() == "yes"))
                 {
-                    ConsoleHelper.WriteWarning("Aborted. No files were deleted or moved.");
+                    ConsoleHelper.WriteWarning("⚠️  Aborted. No files were deleted or moved.");
                     return;
                 }
             }

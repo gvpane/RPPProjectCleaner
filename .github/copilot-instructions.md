@@ -8,22 +8,28 @@ This solution contains two C# console tools for managing Reaper DAW project file
 ## Architecture & Data Flow
 
 ### CleanWavFiles (`CleanWavFiles/Program.cs`)
-1. Parses `.rpp` file using regex to extract WAV references: `FILE "([^"]*\.wav)"`
-2. Converts relative paths from `.rpp` to absolute paths for accurate matching
-3. **Recursively scans ALL subfolders** in project directory for WAV files
-4. Supports **folder exclusion** via `--exclude-folders` flag (comma-separated list)
-5. Compares full absolute paths to determine unreferenced files
-6. **Tracks file sizes**: Shows individual and total file sizes using `FileInfo.Length`
-7. **Color-coded output**: Uses `ConsoleHelper` for visual feedback (green/yellow/red/cyan)
-8. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
-9. **With `--unsafe`**: Deletes unreferenced files permanently
-10. **`--dry-run` mode**: Shows what would happen without making changes (no confirmation needed)
-11. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
-12. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
+1. **Multi-RPP detection**: Automatically finds all `.rpp` files in directory (including subdirectories)
+2. **Reference aggregation**: Prompts user to include all `.rpp` files when checking references
+3. Parses `.rpp` file(s) using regex to extract WAV references: `FILE "([^"]*\.wav)"`
+4. Converts relative paths from `.rpp` to absolute paths for accurate matching
+5. **Recursively scans ALL subfolders** in project directory for WAV files
+6. Supports **folder exclusion** via `--exclude-folders` flag (comma-separated list)
+7. Compares full absolute paths to determine unreferenced files
+8. **Tracks file sizes**: Shows individual and total file sizes using `FileInfo.Length`
+9. **Color-coded output**: Uses `ConsoleHelper` for visual feedback (green/yellow/red/cyan)
+10. **Default behavior**: Moves unreferenced files to "Unused Wavs" folders (safe)
+11. **With `--unsafe`**: Deletes unreferenced files permanently
+12. **`--dry-run` mode**: Shows what would happen without making changes (no confirmation needed)
+13. **`--include-all-rpp`**: Automatically includes all `.rpp` files without prompting
+14. **Orphaned project detection**: Warns about `.rpp` files with missing WAV references
+15. Supports batch processing via `RppTreeLister.GetAllRppFiles()` for recursive directory scanning
+16. **`--cleanup` mode**: Recursively deletes all "Unused Wavs" folders (standalone operation)
 
 **Key Classes**:
 - `RppCleaner.Clean()`: Contains main cleaning logic for processing .rpp files
 - `RppCleaner.IsInExcludedFolder()`: Checks if a file path contains any excluded folder names
+- `RppReferenceAggregator`: Handles multi-rpp detection, parsing, and reference aggregation
+- `RppReferenceAggregator.RppFileInfo`: Data structure holding info about each .rpp file
 - `ConsoleHelper`: Utility class for colored output and file size formatting
 - `UnusedWavsCleaner.CleanupUnusedWavsFolders()`: Recursively removes all "Unused Wavs" folders
 

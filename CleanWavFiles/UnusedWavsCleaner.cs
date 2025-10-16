@@ -18,15 +18,16 @@ namespace CleanWavFiles
 
             if (unusedWavsDirs.Count == 0)
             {
-                ConsoleHelper.WriteWarning("No 'Unused Wavs' folders found.");
+                ConsoleHelper.WriteSuccess("✓ No 'Unused Wavs' folders found.");
                 return;
             }
 
-            ConsoleHelper.WriteInfo($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
+            ConsoleHelper.WriteWarning($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
+            ConsoleHelper.WriteInfo();
             foreach (var dir in unusedWavsDirs)
             {
                 string parentDir = Path.GetDirectoryName(dir);
-                ConsoleHelper.WriteInfo($"  - {parentDir}");
+                ConsoleHelper.WriteWarning($"  • {parentDir}");
             }
             ConsoleHelper.WriteInfo();
 
@@ -34,25 +35,35 @@ namespace CleanWavFiles
             int deletedCount = 0;
             int failedCount = 0;
 
+            ConsoleHelper.WriteSeparator('═', 60);
+            
             foreach (var dir in unusedWavsDirs)
             {
                 try
                 {
                     Directory.Delete(dir, recursive: true);
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Cleaned {parentDir}");
+                    string relativePath = Path.GetRelativePath(rootPath, dir);
+                    ConsoleHelper.WriteSuccess($"✓ Deleted: {relativePath}");
                     deletedCount++;
                 }
                 catch (Exception ex)
                 {
                     string parentDir = Path.GetDirectoryName(dir);
-                    ConsoleHelper.WriteError($"Failed to delete {parentDir}: {ex.Message}");
+                    string relativePath = Path.GetRelativePath(rootPath, dir);
+                    ConsoleHelper.WriteError($"✗ Failed: {relativePath} - {ex.Message}");
                     failedCount++;
                 }
             }
 
             ConsoleHelper.WriteInfo();
-            ConsoleHelper.WriteSuccess($"Cleanup complete: {deletedCount} folder(s) deleted, {failedCount} failed.");
+            ConsoleHelper.WriteSeparator('═', 60);
+            ConsoleHelper.WriteSuccess($"✓ Cleanup complete: {deletedCount} of {unusedWavsDirs.Count} folder(s) deleted");
+            if (failedCount > 0)
+            {
+                ConsoleHelper.WriteError($"✗ {failedCount} folder(s) failed to delete");
+            }
+            ConsoleHelper.WriteSeparator('═', 60);
         }
     }
 }

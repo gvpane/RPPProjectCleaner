@@ -14,6 +14,7 @@ namespace CleanWavFiles
                 ConsoleHelper.WriteInfo("  --dry-run          Preview what would happen without making changes");
                 ConsoleHelper.WriteInfo("  --silent           Skip confirmation prompt");
                 ConsoleHelper.WriteInfo("  --multi            Process all .rpp files in directory tree");
+                ConsoleHelper.WriteInfo("  --include-all-rpp  Include all .rpp files in directory when checking references (no prompt)");
                 ConsoleHelper.WriteInfo("  --exclude-folders  Comma-separated folder names to exclude (e.g., \"Renders,Backup,Archive\")");
                 ConsoleHelper.WriteInfo();
                 ConsoleHelper.WriteInfo("Cleanup mode:");
@@ -36,6 +37,7 @@ namespace CleanWavFiles
             bool dryRunMode = args.Skip(1).Contains("--dry-run", StringComparer.OrdinalIgnoreCase);
             bool silentMode = args.Skip(1).Contains("--silent", StringComparer.OrdinalIgnoreCase);
             bool multiMode = args.Skip(1).Contains("--multi", StringComparer.OrdinalIgnoreCase);
+            bool includeAllRpp = args.Skip(1).Contains("--include-all-rpp", StringComparer.OrdinalIgnoreCase);
 
             // Dry-run mode implies list mode and prevents actual changes
             if (dryRunMode)
@@ -95,8 +97,8 @@ namespace CleanWavFiles
 
                 foreach (var file in rppFiles)
                 {
-                    ConsoleHelper.WriteInfo($"Processing: {file}");
-                    RppCleaner.Clean(file, unsafeMode, listMode, silentMode, dryRunMode, excludedFolders);
+                    ConsoleHelper.WriteInfo($"\nProcessing: {file}");
+                    RppCleaner.Clean(file, unsafeMode, listMode, silentMode, dryRunMode, includeAllRpp, excludedFolders);
                 }
                 return;
             }
@@ -108,7 +110,7 @@ namespace CleanWavFiles
                 return;
             }
 
-            RppCleaner.Clean(rppPath, unsafeMode, listMode, silentMode, dryRunMode, excludedFolders);
+            RppCleaner.Clean(rppPath, unsafeMode, listMode, silentMode, dryRunMode, includeAllRpp, excludedFolders);
         }
     }
 }
