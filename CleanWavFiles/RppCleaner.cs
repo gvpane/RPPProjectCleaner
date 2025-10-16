@@ -198,24 +198,28 @@ namespace CleanWavFiles
                 return;
             }
 
+            // Create single "Unused Wavs" folder in root directory
+            string rootUnusedDir = Path.Combine(rppDir, "Unused Wavs");
+            if (!Directory.Exists(rootUnusedDir))
+                Directory.CreateDirectory(rootUnusedDir);
+
             foreach (var wavFile in filesToDelete)
             {
                 try
                 {
                     long fileSize = new FileInfo(wavFile).Length;
                     
-                    // Determine the correct Unused Wavs folder based on original location
-                    string wavFileDir = Path.GetDirectoryName(wavFile);
-                    string unusedDir = Path.Combine(wavFileDir, "Unused Wavs");
+                    // Preserve directory structure within "Unused Wavs" folder
+                    string relativePath = Path.GetRelativePath(rppDir, wavFile);
+                    string destPath = Path.Combine(rootUnusedDir, relativePath);
                     
-                    if (!Directory.Exists(unusedDir)) 
-                        Directory.CreateDirectory(unusedDir);
+                    // Create subdirectories if needed
+                    string destDir = Path.GetDirectoryName(destPath);
+                    if (!Directory.Exists(destDir))
+                        Directory.CreateDirectory(destDir);
 
-                    string destPath = Path.Combine(unusedDir, Path.GetFileName(wavFile));
                     File.Move(wavFile, destPath, overwrite: true);
                     
-                    // Show relative path for better readability
-                    string relativePath = Path.GetRelativePath(rppDir, wavFile);
                     ConsoleHelper.WriteInfo($"→ Moved: {relativePath} ({ConsoleHelper.FormatFileSize(fileSize)})");
                     affectedCount++;
                     processedSize += fileSize;
@@ -229,8 +233,9 @@ namespace CleanWavFiles
             
             Console.WriteLine();
             ConsoleHelper.WriteSeparator('═', 60);
-            ConsoleHelper.WriteSuccess($"✓ Moved {affectedCount} of {filesToDelete.Count} file(s) to 'Unused Wavs' folder(s)");
+            ConsoleHelper.WriteSuccess($"✓ Moved {affectedCount} of {filesToDelete.Count} file(s) to 'Unused Wavs' folder");
             ConsoleHelper.WriteSuccess($"✓ Space moved: {ConsoleHelper.FormatFileSize(processedSize)}");
+            ConsoleHelper.WriteInfo($"   Location: {Path.Combine(rppDir, "Unused Wavs")}");
             ConsoleHelper.WriteSeparator('═', 60);
         }
 
