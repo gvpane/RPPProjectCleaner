@@ -23,10 +23,36 @@ namespace CleanWavFiles
             Console.ResetColor();
         }
 
-        public static void WriteInfo(string message)
+        public static void WriteInfo(string message = "")
         {
+            if (string.IsNullOrEmpty(message))
+            {
+                Console.WriteLine();
+                return;
+            }
+            
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        public static void WritePlain(string message)
+        {
+            Console.WriteLine(message);
+        }
+
+        public static void WriteHeader(string message)
+        {
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        public static void WritePrompt(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(message);
             Console.ResetColor();
         }
 

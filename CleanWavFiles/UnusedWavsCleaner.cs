@@ -6,53 +6,64 @@ namespace CleanWavFiles
         {
             if (!Directory.Exists(rootPath))
             {
-                Console.WriteLine($"Directory not found: {rootPath}");
+                ConsoleHelper.WriteError($"Directory not found: {rootPath}");
                 return;
             }
 
-            Console.WriteLine($"Searching for 'Unused Wavs' folders in: {rootPath}");
-            Console.WriteLine();
+            ConsoleHelper.WriteInfo($"Searching for 'Unused Wavs' folders in: {rootPath}");
+            ConsoleHelper.WriteInfo();
 
             // Find all "Unused Wavs" directories recursively
             var unusedWavsDirs = Directory.GetDirectories(rootPath, "Unused Wavs", SearchOption.AllDirectories).ToList();
 
             if (unusedWavsDirs.Count == 0)
             {
-                Console.WriteLine("No 'Unused Wavs' folders found.");
+                ConsoleHelper.WriteSuccess("✓ No 'Unused Wavs' folders found.");
                 return;
             }
 
-            Console.WriteLine($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
+            ConsoleHelper.WriteWarning($"Found {unusedWavsDirs.Count} 'Unused Wavs' folder(s):");
+            ConsoleHelper.WriteInfo();
             foreach (var dir in unusedWavsDirs)
             {
                 string parentDir = Path.GetDirectoryName(dir);
-                Console.WriteLine($"  - {parentDir}");
+                ConsoleHelper.WriteWarning($"  • {parentDir}");
             }
-            Console.WriteLine();
+            ConsoleHelper.WriteInfo();
 
             // Delete all found directories
             int deletedCount = 0;
             int failedCount = 0;
 
+            ConsoleHelper.WriteSeparator('═', 60);
+            
             foreach (var dir in unusedWavsDirs)
             {
                 try
                 {
                     Directory.Delete(dir, recursive: true);
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Cleaned {parentDir}");
+                    string relativePath = Path.GetRelativePath(rootPath, dir);
+                    ConsoleHelper.WriteSuccess($"✓ Deleted: {relativePath}");
                     deletedCount++;
                 }
                 catch (Exception ex)
                 {
                     string parentDir = Path.GetDirectoryName(dir);
-                    Console.WriteLine($"Failed to delete {parentDir}: {ex.Message}");
+                    string relativePath = Path.GetRelativePath(rootPath, dir);
+                    ConsoleHelper.WriteError($"✗ Failed: {relativePath} - {ex.Message}");
                     failedCount++;
                 }
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"Cleanup complete: {deletedCount} folder(s) deleted, {failedCount} failed.");
+            ConsoleHelper.WriteInfo();
+            ConsoleHelper.WriteSeparator('═', 60);
+            ConsoleHelper.WriteSuccess($"✓ Cleanup complete: {deletedCount} of {unusedWavsDirs.Count} folder(s) deleted");
+            if (failedCount > 0)
+            {
+                ConsoleHelper.WriteError($"✗ {failedCount} folder(s) failed to delete");
+            }
+            ConsoleHelper.WriteSeparator('═', 60);
         }
     }
 }
